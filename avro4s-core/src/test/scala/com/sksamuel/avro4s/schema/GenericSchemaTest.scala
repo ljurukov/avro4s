@@ -1,6 +1,6 @@
 package com.sksamuel.avro4s.schema
 
-import com.sksamuel.avro4s.{AvroErasedName, AvroSchema}
+import com.sksamuel.avro4s.{AvroErasedName, AvroSchema, SchemaFor}
 import org.apache.avro.SchemaParseException
 import org.scalatest.{FunSuite, Matchers}
 

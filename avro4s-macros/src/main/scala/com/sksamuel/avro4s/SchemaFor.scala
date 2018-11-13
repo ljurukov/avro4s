@@ -15,6 +15,8 @@ import scala.math.BigDecimal.RoundingMode.{RoundingMode, UNNECESSARY}
 import scala.reflect.ClassTag
 import scala.reflect.internal.{Definitions, StdNames, SymbolTable}
 import scala.reflect.macros.whitebox
+import scala.reflect.runtime.currentMirror
+import scala.tools.reflect.ToolBox
 import scala.reflect.runtime.universe._
 
 /**
@@ -162,7 +164,7 @@ object SchemaFor extends TupleSchemaFor with CoproductSchemaFor {
     override def schema: Schema = {
 
       val annos = tag.runtimeClass.getAnnotations.toList.map { a =>
-        Anno(a.annotationType.getClass.getName, Nil)
+        Anno(a.annotationType.getClass.getName, null)
       }
 
       val extractor = new AnnotationExtractors(annos)
@@ -193,7 +195,16 @@ object SchemaFor extends TupleSchemaFor with CoproductSchemaFor {
 
     val annos = typeRef.pre.typeSymbol.annotations.map { a =>
       val name = a.tree.tpe.typeSymbol.fullName
-      val args = a.tree.children.tail.map(_.toString.stripPrefix("\"").stripSuffix("\""))
+      var args = Map.empty[String, AnyRef]
+      try {
+        val tb = currentMirror.mkToolBox()
+        args = tb.parse(a.toString) match {
+          case c: AvroFieldReflection => c.getAllFields
+          case _ => Map.empty[String, AnyRef]
+        }
+      }catch {
+        case e : Throwable => e.printStackTrace()
+      }
       Anno(name, args)
     }
 
